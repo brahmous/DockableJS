@@ -30,6 +30,7 @@ a:hover {
 
 body {
   margin: 0;
+  overflow: hidden;
 }
 
 button {
@@ -49,6 +50,18 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+.dragFeedbackElement {
+  /* position: absolute;
+  width: 100;
+  height: 100;
+  background: 'red';
+  z-index: 10000;
+  transform: 'translate(0px, 0px)';
+  user-select: 'none';
+  touch-action: 'none';
+  will-change: 'top left'; */
 }
 
 @media (prefers-color-scheme: light) {

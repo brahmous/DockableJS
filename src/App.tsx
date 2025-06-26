@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState, version } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import {
-  getSplitAnimationState,
-  SplitType,
-  UITree,
-  type UIBlock,
-} from './Float';
+import { SplitType, UITree, type UIBlock } from './Float';
 
 // const uitree: UITree = new UITree(500, 500);
 // uitree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 });
@@ -14,6 +9,14 @@ import {
 
 let newUiTree = new UITree(0, 0);
 
+const dragController: {
+  showHTML5DragFeedback?: (
+    feedbackData: string,
+    e: React.DragEvent<HTMLDivElement>
+  ) => void;
+  hideHTML5DragFeedback?: (e: React.DragEvent<HTMLDivElement>) => void;
+} = {};
+
 function FloatComponent() {
   const animationDuration = 0.5;
   // const animationDuration = 5;
@@ -21,6 +24,11 @@ function FloatComponent() {
   const [blocks, setBlocks] = useState<UIBlock[]>([]);
 
   const ref = useRef<HTMLDivElement>(null);
+
+  const dragFeedbackRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<boolean>(false);
+
+  const dragStartPoint = useRef<{ x: number; y: number }>(null);
 
   useEffect(() => {
     newUiTree = new UITree(ref.current!.clientWidth, ref.current!.clientHeight);
@@ -32,6 +40,57 @@ function FloatComponent() {
     setState('page');
   }, []);
 
+  useEffect(() => {
+    if (!dragFeedbackRef.current) return;
+
+    function handleDragOver(e: DragEvent) {
+      if (drag.current) {
+        e.preventDefault();
+        dragFeedbackRef.current!.style.left = `${e.clientX + 10}px`;
+        dragFeedbackRef.current!.style.top = `${e.clientY + 10}px`;
+      }
+    }
+
+    document.addEventListener('dragover', handleDragOver);
+    dragController.showHTML5DragFeedback = (
+      feedbackData: string,
+      e: React.DragEvent<HTMLDivElement>
+    ) => {
+      drag.current = true;
+      dragFeedbackRef.current!.innerHTML = `<span class="dragFeedbackElement">${feedbackData}</span>`;
+      dragFeedbackRef.current!.style.left = `${e.clientX + 10}px`;
+      dragFeedbackRef.current!.style.top = `${e.clientY + 10}px`;
+      dragFeedbackRef.current!.style.display = 'block';
+    };
+
+    dragController.hideHTML5DragFeedback = (
+      e: React.DragEvent<HTMLDivElement>
+    ) => {
+      drag.current = false;
+      dragFeedbackRef.current!.style.display = 'none';
+    };
+
+    return () => {
+      document.removeEventListener('dragover', handleDragOver);
+      delete dragController.showHTML5DragFeedback;
+      delete dragController.hideHTML5DragFeedback;
+    };
+  }, []);
+  const colors = [
+    '#FF0000',
+    '#00FF00',
+    '#0000FF',
+    '#FFFF00',
+    '#FF00FF',
+    '#00FFFF',
+    '#800000',
+    '#808000',
+    '#008000',
+    '#800080',
+    '#FFA500',
+    '#A52A2A',
+  ];
+
   return (
     <div
       style={{
@@ -40,15 +99,57 @@ function FloatComponent() {
         flexGrow: 1,
       }}
       ref={ref}
+      onDragStart={(e) => {
+        e.dataTransfer.setDragImage(new Image(), 0, 0);
+        dragController.showHTML5DragFeedback!('hello', e);
+        dragStartPoint.current = { x: e.clientX, y: e.clientY };
+      }}
+      onDragEnd={(e) => {
+        dragController.hideHTML5DragFeedback!(e);
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+      }}
+      onDrop={(e) => {
+        const deletePoint = dragStartPoint.current;
+        if (deletePoint) {
+          newUiTree.Delete(deletePoint);
+          setBlocks(newUiTree.RenderLayout());
+          requestAnimationFrame(() => {
+            newUiTree.Split(SplitType.VERTICAL, { x: e.clientX, y: e.clientY });
+            setBlocks(newUiTree.RenderLayout());
+          });
+
+          dragController.hideHTML5DragFeedback!(e);
+        }
+      }}
     >
-      <div
+      {/* <span
+        ref={dragFeedbackRef}
         style={{
           position: 'absolute',
           width: 100,
           height: 100,
-          border: '2px solid red',
+          background: 'red',
+          zIndex: 10000,
+          transform: 'translate(0px, 0px)', // Initial position
+          userSelect: 'none',
+          touchAction: 'none',
+          willChange: 'transform',
         }}
-      ></div>
+      ></span> */}
+      <div
+        ref={dragFeedbackRef}
+        style={{
+          position: 'fixed',
+          display: 'none',
+          pointerEvents: 'none',
+          zIndex: 9999,
+        }}
+      />
       {state == 'loading' && <div>Loading</div>}
       {state == 'page' && (
         <>
@@ -81,6 +182,7 @@ function FloatComponent() {
                     transitionDuration: `${animationDuration}s`,
                     // transformOrigin: block.anchor.toLowerCase(),
                     // transitionDelay: !block.delete ? '0.1s' : '0s',
+                    background: colors[index],
                   }}
                   key={index}
                   draggable={true}
@@ -139,21 +241,6 @@ function App() {
     }, 2000);
   });
  */
-  const colors = [
-    '#FF0000',
-    '#00FF00',
-    '#0000FF',
-    '#FFFF00',
-    '#FF00FF',
-    '#00FFFF',
-    '#800000',
-    '#808000',
-    '#008000',
-    '#800080',
-    '#FFA500',
-    '#A52A2A',
-  ];
-
   const ref = useRef<HTMLDivElement>(null);
 
   return (
