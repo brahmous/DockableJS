@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
-import { SplitType, UITree, type UIBlock } from './Float';
+import { SplitType, UITree, type Point, type UIBlock } from './Float';
 
 // const uitree: UITree = new UITree(400, 400);
 // uitree.Split(SplitType.HORIZONTAL, { x: 100, y: 100 });
 // uitree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
 // uitree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
 
+enum Edges {
+  LEFT,
+  RIGHT,
+  TOP,
+  BOTTOM,
+}
+
 let newUiTree = new UITree(400, 400);
 newUiTree.Split(SplitType.HORIZONTAL, { x: 100, y: 200 });
 newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 100 });
 newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
+// newUiTree.Split(SplitType.HORIZONTAL, { x: 326, y: 214 }, 8);
 
 const dragController: {
   showHTML5DragFeedback?: (
@@ -41,7 +49,6 @@ function FloatComponent() {
     const initialBlocks = newUiTree.RenderLayout();
     setBlocks(initialBlocks);
     setState('page');
-    console.log(newUiTree);
   }, []);
 
   useEffect(() => {
@@ -107,10 +114,6 @@ function FloatComponent() {
         ref.current?.getBoundingClientRect().y;
         if (!ref.current) return;
         const bbox = ref.current.getBoundingClientRect();
-        console.log('on drag start: ', {
-          x: e.clientX - bbox.x,
-          y: e.clientY - bbox.y,
-        });
         e.dataTransfer.setDragImage(new Image(), 0, 0);
         e.dataTransfer.setData(
           'id',
@@ -124,7 +127,7 @@ function FloatComponent() {
           x: e.clientX - bbox.x,
           y: e.clientY - bbox.y,
         };
-        console.log(dragStartPoint.current);
+        console.log('drag start point: ', dragStartPoint.current);
       }}
       onDragEnd={(e) => {
         dragController.hideHTML5DragFeedback!(e);
@@ -136,16 +139,45 @@ function FloatComponent() {
         e.preventDefault();
       }}
       onDrop={(e) => {
-        const id = parseInt(e.dataTransfer.getData('id'));
-        console.log('id: ', id);
+        // console.log('id: ', id);
         const deletePoint = dragStartPoint.current;
-        console.log('Delete Point: ', deletePoint);
-        console.log(
-          'delete block: ',
-          newUiTree.find({ x: deletePoint!.x, y: deletePoint!.y }).id
-        );
+        // console.log('Delete Point: ', deletePoint);
+        // console.log(
+        //   'delete block: ',
+        //   newUiTree.find({ x: deletePoint!.x, y: deletePoint!.y }).id
+        // );
         if (deletePoint) {
+          const bbox = ref.current?.getBoundingClientRect();
+          const dropPoint: Point = {
+            x: e.clientX - bbox!.x,
+            y: e.clientY - bbox!.y,
+          };
+          // console.log('delte id: ', newUiTree.find(deletePoint).id);
+          // console.log('Drop Point: ', dropPoint);
+          const id = newUiTree.find(deletePoint).id;
+          const dropSplitBBox = newUiTree.find(dropPoint);
           newUiTree.Delete(deletePoint);
+
+          let distances: number[] = [];
+          distances[Edges.LEFT] = e.clientX - dropSplitBBox.x;
+          distances[Edges.RIGHT] = dropSplitBBox.width - distances[Edges.LEFT];
+          distances[Edges.TOP] = e.clientY - dropSplitBBox.y;
+          distances[Edges.BOTTOM] = dropSplitBBox.height - distances[Edges.TOP];
+
+          const min_d = Math.min(...distances);
+
+          console.log({ dropPoint });
+
+          if (
+            min_d == distances[Edges.LEFT] ||
+            min_d == distances[Edges.RIGHT]
+          ) {
+            console.log('vertical');
+            newUiTree.Split(SplitType.VERTICAL, dropPoint, id, newUiTree);
+          } else {
+            console.log('horizontal');
+            newUiTree.Split(SplitType.HORIZONTAL, dropPoint, id, newUiTree);
+          }
           setBlocks(newUiTree.RenderLayout());
           dragController.hideHTML5DragFeedback!(e);
         }

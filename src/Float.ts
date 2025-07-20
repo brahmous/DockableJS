@@ -45,7 +45,7 @@ export interface Dimensions {
   b: number;
 }
 
-interface Point {
+export interface Point {
   x: number;
   y: number;
 }
@@ -60,6 +60,8 @@ type SplitPane = VerticalSplitPane | HorizontalSplitPane;
 
 interface PaneDescriptor {
   id: number;
+  x: number;
+  y: number;
   width: number;
   height: number;
 }
@@ -78,8 +80,8 @@ export class UITree {
   }
 
   Delete(point: Point) {
+    console.log('delete before: ', structuredClone(this));
     let current: Pane = this.root;
-    console.log(this);
     while (isSplitPane(current)) {
       if (current.splitType == SplitType.VERTICAL) {
         if (current.splitPosition < point.x) {
@@ -200,11 +202,14 @@ export class UITree {
         }
       }
     }
+    console.log('delete after: ', this);
   }
 
-  Split(splitType: SplitType, point: Point, pane_id?: number) {
+  Split(splitType: SplitType, point: Point, pane_id?: number, uiTree?: UITree) {
     // console.log(pane_id);
+    console.log('before: ', uiTree);
     let current: Pane = this.root;
+
     let dimensions: Dimensions = {
       l: 0,
       r: this.screenWidth,
@@ -277,7 +282,8 @@ export class UITree {
                     parent: current,
                     top: {
                       id:
-                        height / 2 < point.y
+                        dimensions.t + height / 2 <
+                        point.y /* not the heigh the middle */
                           ? current.right.id
                           : pane_id != undefined
                           ? pane_id
@@ -285,7 +291,7 @@ export class UITree {
                     },
                     bottom: {
                       id:
-                        height / 2 >= point.y
+                        dimensions.t + height / 2 >= point.y
                           ? current.right.id
                           : pane_id != undefined
                           ? pane_id
@@ -475,16 +481,12 @@ export class UITree {
                           : this.id++,
                     },
                   };
-            console.log(current.top);
-            console.log(pane_id);
-            console.log({ width });
-            console.log(point);
-            console.log(width / 2);
             break;
           }
         }
       }
     }
+    console.log('After: ', uiTree);
   }
 
   RenderLayout(): UIBlock[] {
@@ -575,6 +577,8 @@ export class UITree {
     }
     return {
       id: root.id,
+      x: l,
+      y: t,
       height: paneHeight,
       width: paneWidth,
     };
