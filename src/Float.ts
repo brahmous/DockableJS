@@ -3,6 +3,9 @@ export enum SplitType {
   HORIZONTAL,
 }
 
+console.log('vertical: ', SplitType.VERTICAL);
+console.log('horizontal: ', SplitType.HORIZONTAL);
+
 export interface VerticalSplitPane {
   splitPosition: number;
   splitType: SplitType.VERTICAL;
@@ -55,8 +58,14 @@ export function isSplitPane(
 
 type SplitPane = VerticalSplitPane | HorizontalSplitPane;
 
-export class UITree {
+interface PaneDescriptor {
   id: number;
+  width: number;
+  height: number;
+}
+
+export class UITree {
+  id: number; // Id counter
   root: Pane;
   screenWidth: number;
   screenHeight: number;
@@ -70,7 +79,7 @@ export class UITree {
 
   Delete(point: Point) {
     let current: Pane = this.root;
-
+    console.log(this);
     while (isSplitPane(current)) {
       if (current.splitType == SplitType.VERTICAL) {
         if (current.splitPosition < point.x) {
@@ -95,6 +104,9 @@ export class UITree {
                 }
               }
             } else {
+              if (isSplitPane(current.left)) {
+                current.left.parent = null;
+              }
               this.root = current.left;
             }
             break;
@@ -121,6 +133,9 @@ export class UITree {
                 }
               }
             } else {
+              if (isSplitPane(current.right)) {
+                current.right.parent = null;
+              }
               this.root = current.right;
             }
             break;
@@ -132,6 +147,7 @@ export class UITree {
             current = current.bottom;
           } else {
             const parent = current.parent;
+            console.log({ current });
             if (parent) {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
@@ -147,6 +163,9 @@ export class UITree {
                 }
               }
             } else {
+              if (isSplitPane(current.top)) {
+                current.top.parent = null;
+              }
               this.root = current.top;
             }
             break;
@@ -171,6 +190,9 @@ export class UITree {
                 }
               }
             } else {
+              if (isSplitPane(current.bottom)) {
+                current.bottom.parent = null;
+              }
               this.root = current.bottom;
             }
             break;
@@ -180,7 +202,8 @@ export class UITree {
     }
   }
 
-  Split(splitType: SplitType, point: Point) {
+  Split(splitType: SplitType, point: Point, pane_id?: number) {
+    // console.log(pane_id);
     let current: Pane = this.root;
     let dimensions: Dimensions = {
       l: 0,
@@ -197,10 +220,20 @@ export class UITree {
               splitPosition: point.y,
               parent: null,
               top: {
-                id: this.screenHeight / 2 < point.y ? current.id : this.id++,
+                id:
+                  this.screenHeight / 2 < point.y
+                    ? current.id
+                    : pane_id != undefined
+                    ? pane_id
+                    : this.id++,
               },
               bottom: {
-                id: this.screenHeight / 2 >= point.y ? current.id : this.id++,
+                id:
+                  this.screenHeight / 2 >= point.y
+                    ? current.id
+                    : pane_id != undefined
+                    ? pane_id
+                    : this.id++,
               },
             }
           : {
@@ -208,10 +241,20 @@ export class UITree {
               splitPosition: point.x,
               parent: null,
               left: {
-                id: this.screenWidth / 2 < point.x ? current.id : this.id++,
+                id:
+                  this.screenWidth / 2 < point.x
+                    ? current.id
+                    : pane_id != undefined
+                    ? pane_id
+                    : this.id++,
               },
               right: {
-                id: this.screenWidth / 2 >= point.x ? current.id : this.id++,
+                id:
+                  this.screenWidth / 2 >= point.x
+                    ? current.id
+                    : pane_id != undefined
+                    ? pane_id
+                    : this.id++,
               },
             };
       return;
@@ -233,10 +276,20 @@ export class UITree {
                     splitPosition: point.y,
                     parent: current,
                     top: {
-                      id: height / 2 < point.y ? current.right.id : this.id++,
+                      id:
+                        height / 2 < point.y
+                          ? current.right.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     bottom: {
-                      id: height / 2 >= point.y ? current.right.id : this.id++,
+                      id:
+                        height / 2 >= point.y
+                          ? current.right.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   }
                 : {
@@ -244,10 +297,20 @@ export class UITree {
                     splitPosition: point.x,
                     parent: current,
                     left: {
-                      id: width / 2 < point.x ? current.right.id : this.id++,
+                      id:
+                        width / 2 < point.x
+                          ? current.right.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     right: {
-                      id: width / 2 >= point.x ? current.right.id : this.id++,
+                      id:
+                        width / 2 >= point.x
+                          ? current.right.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   };
             break;
@@ -266,10 +329,20 @@ export class UITree {
                     splitPosition: point.y,
                     parent: current,
                     top: {
-                      id: height / 2 < point.y ? current.left.id : this.id++,
+                      id:
+                        height / 2 < point.y
+                          ? current.left.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     bottom: {
-                      id: height / 2 >= point.y ? current.left.id : this.id++,
+                      id:
+                        height / 2 >= point.y
+                          ? current.left.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   }
                 : {
@@ -277,16 +350,27 @@ export class UITree {
                     splitPosition: point.x,
                     parent: current,
                     left: {
-                      id: width / 2 < point.x ? current.left.id : this.id++,
+                      id:
+                        width / 2 < point.x
+                          ? current.left.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     right: {
-                      id: width / 2 >= point.x ? current.left.id : this.id++,
+                      id:
+                        width / 2 >= point.x
+                          ? current.left.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   };
             break;
           }
         }
       } else {
+        // Horizontal Split
         if (current.splitPosition < point.y) {
           if (isSplitPane(current.bottom)) {
             current = current.bottom;
@@ -301,10 +385,20 @@ export class UITree {
                     splitPosition: point.y,
                     parent: current,
                     top: {
-                      id: height / 2 < point.y ? current.bottom.id : this.id++,
+                      id:
+                        height / 2 < point.y
+                          ? current.bottom.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     bottom: {
-                      id: height / 2 >= point.y ? current.bottom.id : this.id++,
+                      id:
+                        height / 2 >= point.y
+                          ? current.bottom.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   }
                 : {
@@ -312,10 +406,20 @@ export class UITree {
                     splitPosition: point.x,
                     parent: current,
                     left: {
-                      id: width / 2 < point.x ? current.bottom.id : this.id++,
+                      id:
+                        width / 2 < point.x
+                          ? current.bottom.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     right: {
-                      id: width / 2 >= point.x ? current.bottom.id : this.id++,
+                      id:
+                        width / 2 >= point.x
+                          ? current.bottom.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   };
             break;
@@ -334,10 +438,20 @@ export class UITree {
                     splitPosition: point.y,
                     parent: current,
                     top: {
-                      id: height / 2 < point.y ? current.top.id : this.id++,
+                      id:
+                        height / 2 < point.y
+                          ? current.top.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     bottom: {
-                      id: height / 2 >= point.y ? current.top.id : this.id++,
+                      id:
+                        height / 2 >= point.y
+                          ? current.top.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   }
                 : {
@@ -345,12 +459,27 @@ export class UITree {
                     splitPosition: point.x,
                     parent: current,
                     left: {
-                      id: width / 2 < point.x ? current.top.id : this.id++,
+                      id:
+                        width / 2 < point.x
+                          ? current.top.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                     right: {
-                      id: width / 2 >= point.x ? current.top.id : this.id++,
+                      id:
+                        width / 2 >= point.x
+                          ? current.top.id
+                          : pane_id != undefined
+                          ? pane_id
+                          : this.id++,
                     },
                   };
+            console.log(current.top);
+            console.log(pane_id);
+            console.log({ width });
+            console.log(point);
+            console.log(width / 2);
             break;
           }
         }
@@ -396,6 +525,59 @@ export class UITree {
         delete: false,
       };
     }
+  }
+
+  find(target: Point) {
+    return this.getEnclosingRect(
+      this.root,
+      {
+        l: 0,
+        r: this.screenWidth,
+        t: 0,
+        b: this.screenHeight,
+      },
+      target
+    );
+  }
+
+  getEnclosingRect(
+    root: Pane,
+    { l, r, t, b }: { l: number; r: number; t: number; b: number },
+    target: Point
+  ): PaneDescriptor {
+    const paneWidth = r - l;
+    const paneHeight = b - t;
+    if (isSplitPane(root)) {
+      if (root.splitType == SplitType.HORIZONTAL) {
+        return paneHeight / 2 >= target.y
+          ? this.getEnclosingRect(
+              root.top,
+              { l, r, b: root.splitPosition, t },
+              target
+            )
+          : this.getEnclosingRect(
+              root.bottom,
+              { l, r, b, t: root.splitPosition },
+              target
+            );
+      }
+      return paneWidth / 2 >= target.x
+        ? this.getEnclosingRect(
+            root.left,
+            { l, r: root.splitPosition, b, t },
+            target
+          )
+        : this.getEnclosingRect(
+            root.right,
+            { l: root.splitPosition, r, b, t },
+            target
+          );
+    }
+    return {
+      id: root.id,
+      height: paneHeight,
+      width: paneWidth,
+    };
   }
 }
 
@@ -488,11 +670,11 @@ export function getSplitAnimationState(
   for (let i = 0; i < newState.length; ++i) {
     if (!newState[i] || oldState[i]) continue;
     console.log({ i });
-    oldState[i] = {...newState[i]};
+    oldState[i] = { ...newState[i] };
     console.log('obj: ', newState[i]);
 
     if (oldState[i] == newState[i]) {
-      alert("The same");
+      alert('The same');
     }
 
     const addedXInterval: [number, number] = [
@@ -526,10 +708,10 @@ export function getSplitAnimationState(
         newState[j].x,
         newState[j].x + oldState[j].w,
       ];
-      const newYInterval: [number, number] = [
-        newState[j].y,
-        newState[j].y + oldState[j].h,
-      ];
+      // const newYInterval: [number, number] = [
+      //   newState[j].y,
+      //   newState[j].y + oldState[j].h,
+      // ];
 
       if (
         (newXInterval[0] == oldXInterval[0] &&

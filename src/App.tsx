@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { SplitType, UITree, type UIBlock } from './Float';
 
-// const uitree: UITree = new UITree(500, 500);
-// uitree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 });
+// const uitree: UITree = new UITree(400, 400);
+// uitree.Split(SplitType.HORIZONTAL, { x: 100, y: 100 });
 // uitree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
 // uitree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
 
-let newUiTree = new UITree(0, 0);
+let newUiTree = new UITree(400, 400);
+newUiTree.Split(SplitType.HORIZONTAL, { x: 100, y: 200 });
+newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 100 });
+newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
 
 const dragController: {
   showHTML5DragFeedback?: (
@@ -31,13 +34,14 @@ function FloatComponent() {
   const dragStartPoint = useRef<{ x: number; y: number }>(null);
 
   useEffect(() => {
-    newUiTree = new UITree(ref.current!.clientWidth, ref.current!.clientHeight);
-    newUiTree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 });
-    newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
-    newUiTree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
+    // newUiTree = new UITree(ref.current!.clientWidth, ref.current!.clientHeight);
+    // newUiTree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 });
+    // newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
+    // newUiTree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
     const initialBlocks = newUiTree.RenderLayout();
     setBlocks(initialBlocks);
     setState('page');
+    console.log(newUiTree);
   }, []);
 
   useEffect(() => {
@@ -63,12 +67,12 @@ function FloatComponent() {
       dragFeedbackRef.current!.style.display = 'block';
     };
 
-    dragController.hideHTML5DragFeedback = (
-      e: React.DragEvent<HTMLDivElement>
-    ) => {
-      drag.current = false;
-      dragFeedbackRef.current!.style.display = 'none';
-    };
+    dragController.hideHTML5DragFeedback = () =>
+      // e: React.DragEvent<HTMLDivElement>
+      {
+        drag.current = false;
+        dragFeedbackRef.current!.style.display = 'none';
+      };
 
     return () => {
       document.removeEventListener('dragover', handleDragOver);
@@ -100,9 +104,27 @@ function FloatComponent() {
       }}
       ref={ref}
       onDragStart={(e) => {
+        ref.current?.getBoundingClientRect().y;
+        if (!ref.current) return;
+        const bbox = ref.current.getBoundingClientRect();
+        console.log('on drag start: ', {
+          x: e.clientX - bbox.x,
+          y: e.clientY - bbox.y,
+        });
         e.dataTransfer.setDragImage(new Image(), 0, 0);
+        e.dataTransfer.setData(
+          'id',
+          newUiTree
+            .find({ x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY })
+            .id.toString()
+        );
+        // Call function to get information
         dragController.showHTML5DragFeedback!('hello', e);
-        dragStartPoint.current = { x: e.clientX, y: e.clientY };
+        dragStartPoint.current = {
+          x: e.clientX - bbox.x,
+          y: e.clientY - bbox.y,
+        };
+        console.log(dragStartPoint.current);
       }}
       onDragEnd={(e) => {
         dragController.hideHTML5DragFeedback!(e);
@@ -114,15 +136,17 @@ function FloatComponent() {
         e.preventDefault();
       }}
       onDrop={(e) => {
+        const id = parseInt(e.dataTransfer.getData('id'));
+        console.log('id: ', id);
         const deletePoint = dragStartPoint.current;
+        console.log('Delete Point: ', deletePoint);
+        console.log(
+          'delete block: ',
+          newUiTree.find({ x: deletePoint!.x, y: deletePoint!.y }).id
+        );
         if (deletePoint) {
           newUiTree.Delete(deletePoint);
           setBlocks(newUiTree.RenderLayout());
-          requestAnimationFrame(() => {
-            newUiTree.Split(SplitType.VERTICAL, { x: e.clientX, y: e.clientY });
-            setBlocks(newUiTree.RenderLayout());
-          });
-
           dragController.hideHTML5DragFeedback!(e);
         }
       }}
@@ -182,7 +206,7 @@ function FloatComponent() {
                     transitionDuration: `${animationDuration}s`,
                     // transformOrigin: block.anchor.toLowerCase(),
                     // transitionDelay: !block.delete ? '0.1s' : '0s',
-                    background: colors[index],
+                    background: colors[block.id],
                   }}
                   key={index}
                   draggable={true}
@@ -191,33 +215,12 @@ function FloatComponent() {
                 </div>
               )
           )}
-          <button
+          {/*          <button
             style={{ zIndex: 1000, position: 'absolute', top: 250, left: 250 }}
-            onClick={() => {
-              // newUiTree.Split(SplitType.VERTICAL, { x: 600, y: 400 });
-              // const newBlocks = newUiTree.RenderLayout();
-              // const animationBlocks = getSplitAnimationState(
-              //   blocks,
-              //   newBlocks
-              // );
-              // console.log({animationBlocks});
-              // setBlocks(animationBlocks);
-              // requestAnimationFrame(()=>{
-              //    setBlocks(newBlocks);
-              // })
-              requestAnimationFrame(() => {
-                newUiTree.Delete({ x: 250, y: 500 });
-                setBlocks([...newUiTree.RenderLayout()]);
-              });
-
-              requestAnimationFrame(() => {
-                newUiTree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
-                setBlocks(newUiTree.RenderLayout());
-              });
-            }}
           >
             Split
           </button>
+ */}
         </>
       )}
     </div>
