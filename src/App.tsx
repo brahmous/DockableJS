@@ -18,6 +18,12 @@ let newUiTree = new UITree(400, 400);
 newUiTree.Split(SplitType.HORIZONTAL, { x: 100, y: 200 });
 newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 100 });
 newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
+newUiTree.Split(SplitType.VERTICAL, { x: 250, y: 300 }, 3);
+newUiTree.Delete({ x: 100, y: 300 });
+newUiTree.Split(SplitType.VERTICAL, { x: 300, y: 300 }, 3);
+newUiTree.Delete({ x: 100, y: 300 });
+// newUiTree.Split(SplitType.VERTICAL, { x: 300, y: 300 }, 3);
+// newUiTree.Delete({ x: 100, y: 300 });
 // newUiTree.Split(SplitType.HORIZONTAL, { x: 326, y: 214 }, 8);
 
 const dragController: {
@@ -139,64 +145,83 @@ function FloatComponent() {
         e.preventDefault();
       }}
       onDrop={(e) => {
-        // console.log('id: ', id);
         const deletePoint = dragStartPoint.current;
-        // console.log('Delete Point: ', deletePoint);
-        // console.log(
-        //   'delete block: ',
-        //   newUiTree.find({ x: deletePoint!.x, y: deletePoint!.y }).id
-        // );
-        if (deletePoint) {
-          const bbox = ref.current?.getBoundingClientRect();
-          const dropPoint: Point = {
-            x: e.clientX - bbox!.x,
-            y: e.clientY - bbox!.y,
-          };
-          // console.log('delte id: ', newUiTree.find(deletePoint).id);
-          // console.log('Drop Point: ', dropPoint);
-          const id = newUiTree.find(deletePoint).id;
-          const dropSplitBBox = newUiTree.find(dropPoint);
-          newUiTree.Delete(deletePoint);
 
-          let distances: number[] = [];
-          distances[Edges.LEFT] = e.clientX - dropSplitBBox.x;
-          distances[Edges.RIGHT] = dropSplitBBox.width - distances[Edges.LEFT];
-          distances[Edges.TOP] = e.clientY - dropSplitBBox.y;
-          distances[Edges.BOTTOM] = dropSplitBBox.height - distances[Edges.TOP];
+        if (!deletePoint) return;
 
-          const min_d = Math.min(...distances);
+        const bbox = ref.current?.getBoundingClientRect();
 
-          console.log({ dropPoint });
+        const dropPoint: Point = {
+          x: e.clientX - bbox!.x,
+          y: e.clientY - bbox!.y,
+        };
 
-          if (
-            min_d == distances[Edges.LEFT] ||
-            min_d == distances[Edges.RIGHT]
-          ) {
-            console.log('vertical');
-            newUiTree.Split(SplitType.VERTICAL, dropPoint, id, newUiTree);
-          } else {
-            console.log('horizontal');
-            newUiTree.Split(SplitType.HORIZONTAL, dropPoint, id, newUiTree);
-          }
-          setBlocks(newUiTree.RenderLayout());
-          dragController.hideHTML5DragFeedback!(e);
-        }
+        const movedPane = newUiTree.find(deletePoint);
+        const dropPane = newUiTree.find(dropPoint);
+
+        // You can't drop a pane onto itself
+        if (movedPane.ref == dropPane.ref) return;
+
+        let distances: number[] = [];
+        distances[Edges.LEFT] = e.clientX - dropPane.x - bbox!.x;
+        distances[Edges.RIGHT] = dropPane.width - distances[Edges.LEFT];
+        distances[Edges.TOP] = e.clientY - dropPane.y - bbox!.y;
+        distances[Edges.BOTTOM] = dropPane.height - distances[Edges.TOP];
+
+        const min_d = Math.min(...distances);
+        const splitType =
+          min_d == distances[Edges.LEFT] || min_d == distances[Edges.RIGHT]
+            ? SplitType.VERTICAL
+            : SplitType.HORIZONTAL;
+
+        // if (movedPane.ref.parent) {
+        //   if (movedPane.ref.parent.splitType == SplitType.HORIZONTAL) {
+        //     // if i'm top then if the bottom is drop pain return
+        //     if (
+        //       movedPane.ref.parent.top == movedPane.ref &&
+        //       movedPane.ref.parent.bottom == dropPane.ref &&
+        //       splitType == SplitType.HORIZONTAL &&
+        //       movedPane.ref.parent.splitPosition < dropPoint.y
+        //     )
+        //       return;
+        //     // if i'm bottom then if the top is drop pain return
+        //     if (
+        //       movedPane.ref.parent.bottom == movedPane.ref &&
+        //       movedPane.ref.parent.top == dropPane.ref &&
+        //       splitType == SplitType.HORIZONTAL &&
+        //       movedPane.ref.parent.splitPosition >= dropPane.y
+        //     )
+        //       return;
+        //   } else {
+        //     // if i'm left then if the right is drop pain return
+        //     if (
+        //       movedPane.ref.parent.left == movedPane.ref &&
+        //       movedPane.ref.parent.right == dropPane.ref &&
+        //       splitType == SplitType.VERTICAL &&
+        //       dropPoint.x <
+        //         movedPane.ref.parent.splitPosition + dropPane.width / 2
+        //     )
+        //       return;
+        //     // if i'm right then if the left is drop pain return
+        //     if (
+        //       movedPane.ref.parent.right == movedPane.ref &&
+        //       movedPane.ref.parent.left == dropPane.ref &&
+        //       splitType == SplitType.VERTICAL &&
+        //       dropPoint.x >=
+        //         movedPane.ref.parent.splitPosition - dropPane.width / 2
+        //     )
+        //       return;
+        //   }
+        // } else {
+        //   throw 'inconsistent tree every node must have a parent except the root!';
+        // }
+        const id = movedPane.id;
+        newUiTree.Split(splitType, dropPoint, id, newUiTree);
+        newUiTree.Delete(deletePoint);
+        setBlocks(newUiTree.RenderLayout());
+        dragController.hideHTML5DragFeedback!(e);
       }}
     >
-      {/* <span
-        ref={dragFeedbackRef}
-        style={{
-          position: 'absolute',
-          width: 100,
-          height: 100,
-          background: 'red',
-          zIndex: 10000,
-          transform: 'translate(0px, 0px)', // Initial position
-          userSelect: 'none',
-          touchAction: 'none',
-          willChange: 'transform',
-        }}
-      ></span> */}
       <div
         ref={dragFeedbackRef}
         style={{
@@ -226,14 +251,7 @@ function FloatComponent() {
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    transform: `translate(${block.x}px, ${block.y}px) ${
-                      // block.delete
-                      //   ? block.anchor == 'LEFT' || block.anchor == 'RIGHT'
-                      //     ? `scaleX(0)`
-                      //     : `scaleY(0)`
-                      //   : ''
-                      ''
-                    }`,
+                    transform: `translate(${block.x}px, ${block.y}px)`,
                     // transitionProperty: 'transform',
                     transitionDuration: `${animationDuration}s`,
                     // transformOrigin: block.anchor.toLowerCase(),
@@ -247,12 +265,6 @@ function FloatComponent() {
                 </div>
               )
           )}
-          {/*          <button
-            style={{ zIndex: 1000, position: 'absolute', top: 250, left: 250 }}
-          >
-            Split
-          </button>
- */}
         </>
       )}
     </div>
@@ -260,24 +272,7 @@ function FloatComponent() {
 }
 
 function App() {
-  // const [state, setState] = useState<UIBlock[]>(
-  //   buffer.map((block) => ({
-  //     h: block.h,
-  //     w: block.w,
-  //     x: 0,
-  //     y: 0,
-  //   }))
-  // );
-
-  /*
-  useEffect(() => {
-    setTimeout(() => {
-      setState(buffer);
-    }, 2000);
-  });
- */
   const ref = useRef<HTMLDivElement>(null);
-
   return (
     <div
       style={{

@@ -23,6 +23,7 @@ export interface HorizontalSplitPane {
 }
 
 export interface SolidPane {
+  parent: SplitPane | null;
   id: number;
 }
 
@@ -64,19 +65,26 @@ interface PaneDescriptor {
   y: number;
   width: number;
   height: number;
+  ref: SolidPane;
 }
 
 export class UITree {
-  id: number; // Id counter
+  idCounter: number; // Id counter
   root: Pane;
   screenWidth: number;
   screenHeight: number;
+  // screenbbox: DOMRect;
 
-  constructor(screenWidth: number, screenHeight: number) {
-    this.id = 0;
-    this.root = { id: this.id++ };
+  constructor(
+    screenWidth: number,
+    screenHeight: number
+    // domRoot: HTMLDivElement
+  ) {
+    this.idCounter = 0;
+    this.root = { parent: null, id: this.idCounter++ };
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
+    // this.screenbbox = domRoot.getBoundingClientRect();
   }
 
   Delete(point: Point) {
@@ -93,16 +101,20 @@ export class UITree {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
                   parent.top = current.left;
+                  parent.top.parent = parent;
                 } else {
                   // (parent.bottom == current)
                   parent.bottom = current.left;
+                  parent.bottom.parent = parent;
                 }
               } else {
                 if (parent.left == current) {
                   parent.left = current.left;
+                  parent.left.parent = parent;
                 } else {
                   // (parent.right == current)
                   parent.right = current.left;
+                  parent.right.parent = parent;
                 }
               }
             } else {
@@ -122,16 +134,20 @@ export class UITree {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
                   parent.top = current.right;
+                  parent.top.parent = parent;
                 } else {
                   // (parent.bottom == current)
                   parent.bottom = current.right;
+                  parent.bottom.parent = parent;
                 }
               } else {
                 if (parent.left == current) {
                   parent.left = current.right;
+                  parent.left.parent = parent;
                 } else {
                   // (parent.right == current)
                   parent.right = current.right;
+                  parent.right.parent = parent;
                 }
               }
             } else {
@@ -154,14 +170,18 @@ export class UITree {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
                   parent.top = current.top;
+                  parent.top.parent = parent;
                 } else {
                   parent.bottom = current.top;
+                  parent.bottom.parent = parent;
                 }
               } else {
                 if (parent.left == current) {
                   parent.left = current.top;
+                  parent.left.parent = parent;
                 } else {
                   parent.right = current.top;
+                  parent.right.parent = parent;
                 }
               }
             } else {
@@ -181,14 +201,18 @@ export class UITree {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
                   parent.top = current.bottom;
+                  parent.top.parent = parent;
                 } else {
                   parent.bottom = current.bottom;
+                  parent.bottom.parent = parent;
                 }
               } else {
                 if (parent.left == current) {
                   parent.left = current.bottom;
+                  parent.left.parent = parent;
                 } else {
                   parent.right = current.bottom;
+                  parent.right.parent = parent;
                 }
               }
             } else {
@@ -207,7 +231,7 @@ export class UITree {
 
   Split(splitType: SplitType, point: Point, pane_id?: number, uiTree?: UITree) {
     // console.log(pane_id);
-    console.log('before: ', uiTree);
+
     let current: Pane = this.root;
 
     let dimensions: Dimensions = {
@@ -218,160 +242,196 @@ export class UITree {
     };
 
     if (!isSplitPane(current)) {
-      this.root =
-        splitType == SplitType.HORIZONTAL
-          ? {
-              splitType,
-              splitPosition: point.y,
-              parent: null,
-              top: {
-                id:
-                  this.screenHeight / 2 < point.y
-                    ? current.id
-                    : pane_id != undefined
-                    ? pane_id
-                    : this.id++,
-              },
-              bottom: {
-                id:
-                  this.screenHeight / 2 >= point.y
-                    ? current.id
-                    : pane_id != undefined
-                    ? pane_id
-                    : this.id++,
-              },
-            }
-          : {
-              splitType,
-              splitPosition: point.x,
-              parent: null,
-              left: {
-                id:
-                  this.screenWidth / 2 < point.x
-                    ? current.id
-                    : pane_id != undefined
-                    ? pane_id
-                    : this.id++,
-              },
-              right: {
-                id:
-                  this.screenWidth / 2 >= point.x
-                    ? current.id
-                    : pane_id != undefined
-                    ? pane_id
-                    : this.id++,
-              },
-            };
+      if (splitType == SplitType.HORIZONTAL) {
+        this.root = {
+          splitType,
+          splitPosition: point.y,
+          parent: null,
+          top: {
+            parent: null,
+            id:
+              this.screenHeight / 2 < point.y
+                ? current.id
+                : pane_id != undefined
+                ? pane_id
+                : this.idCounter++,
+          },
+          bottom: {
+            parent: null,
+            id:
+              this.screenHeight / 2 >= point.y
+                ? current.id
+                : pane_id != undefined
+                ? pane_id
+                : this.idCounter++,
+          },
+        };
+        this.root.top.parent = this.root.bottom.parent = this.root;
+      } else {
+        this.root = {
+          splitType,
+          splitPosition: point.x,
+          parent: null,
+          left: {
+            parent: null,
+            id:
+              this.screenWidth / 2 < point.x
+                ? current.id
+                : pane_id != undefined
+                ? pane_id
+                : this.idCounter++,
+          },
+          right: {
+            parent: null,
+            id:
+              this.screenWidth / 2 >= point.x
+                ? current.id
+                : pane_id != undefined
+                ? pane_id
+                : this.idCounter++,
+          },
+        };
+        this.root.left.parent = this.root.right.parent = this.root;
+      }
       return;
     }
 
+    // Current node is split
     while (isSplitPane(current)) {
+      // Current node is split vertically, so we have left and right sides
       if (current.splitType == SplitType.VERTICAL) {
+        // The split position is to the left of x, so we must go to the right
         if (current.splitPosition < point.x) {
+          // The right side is split we recurse
           if (isSplitPane(current.right)) {
             current = current.right;
             dimensions.l = current.splitPosition;
           } else {
-            const width = dimensions.r - current.splitPosition;
-            const height = dimensions.b - dimensions.t;
-            current.right =
-              splitType == SplitType.HORIZONTAL
-                ? {
-                    splitType,
-                    splitPosition: point.y,
-                    parent: current,
-                    top: {
-                      id:
-                        dimensions.t + height / 2 <
-                        point.y /* not the heigh the middle */
-                          ? current.right.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    bottom: {
-                      id:
-                        dimensions.t + height / 2 >= point.y
-                          ? current.right.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  }
-                : {
-                    splitType,
-                    splitPosition: point.x,
-                    parent: current,
-                    left: {
-                      id:
-                        width / 2 < point.x
-                          ? current.right.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    right: {
-                      id:
-                        width / 2 >= point.x
-                          ? current.right.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  };
+            // The right side isn't split so we split it
+            const mid_x =
+              current.splitPosition +
+              (dimensions.r - current.splitPosition) / 2;
+            const mid_y = dimensions.t + (dimensions.b - dimensions.t) / 2;
+
+            if (splitType == SplitType.HORIZONTAL) {
+              current.right = {
+                splitType,
+                splitPosition: point.y,
+                parent: current,
+                top: {
+                  parent: null,
+                  id:
+                    mid_y < point.y /* not the heigh the middle */
+                      ? current.right.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                bottom: {
+                  parent: null,
+                  id:
+                    mid_y >= point.y
+                      ? current.right.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.right.top.parent = current.right.bottom.parent =
+                current.right;
+            } else {
+              current.right = {
+                splitType,
+                splitPosition: point.x,
+                parent: current,
+                left: {
+                  parent: null,
+                  id:
+                    mid_x < point.x
+                      ? current.right.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                right: {
+                  parent: null,
+                  id:
+                    mid_x >= point.x
+                      ? current.right.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.right.left.parent = current.right.right.parent =
+                current.right;
+            }
             break;
           }
         } else {
+          // The split position is to the right of x, so we go left
           if (isSplitPane(current.left)) {
+            // The left child is split so we recurse left
             current = current.left;
             dimensions.r = current.splitPosition;
           } else {
-            const width = current.splitPosition - dimensions.l;
-            const height = dimensions.b - dimensions.t;
-            current.left =
-              splitType == SplitType.HORIZONTAL
-                ? {
-                    splitType,
-                    splitPosition: point.y,
-                    parent: current,
-                    top: {
-                      id:
-                        height / 2 < point.y
-                          ? current.left.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    bottom: {
-                      id:
-                        height / 2 >= point.y
-                          ? current.left.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  }
-                : {
-                    splitType,
-                    splitPosition: point.x,
-                    parent: current,
-                    left: {
-                      id:
-                        width / 2 < point.x
-                          ? current.left.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    right: {
-                      id:
-                        width / 2 >= point.x
-                          ? current.left.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  };
+            // The left child is not split, we split it.
+            const mid_x =
+              dimensions.l + (current.splitPosition - dimensions.l) / 2;
+            const mid_y = dimensions.t + (dimensions.b - dimensions.t) / 2;
+            if (splitType == SplitType.HORIZONTAL) {
+              current.left = {
+                splitType,
+                splitPosition: point.y,
+                parent: current,
+                top: {
+                  parent: null,
+                  id:
+                    mid_y < point.y
+                      ? current.left.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                bottom: {
+                  parent: null,
+                  id:
+                    mid_y >= point.y
+                      ? current.left.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.left.top.parent = current.left.bottom.parent =
+                current.left;
+            } else {
+              current.left = {
+                splitType,
+                splitPosition: point.x,
+                parent: current,
+                left: {
+                  parent: null,
+                  id:
+                    mid_x < point.x
+                      ? current.left.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                right: {
+                  parent: null,
+                  id:
+                    mid_x >= point.x
+                      ? current.left.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.left.left.parent = current.left.right.parent =
+                current.left;
+            }
             break;
           }
         }
@@ -382,52 +442,62 @@ export class UITree {
             current = current.bottom;
             dimensions.t = current.splitPosition;
           } else {
-            const width = dimensions.r - dimensions.l;
-            const height = dimensions.b - current.splitPosition;
-            current.bottom =
-              splitType == SplitType.HORIZONTAL
-                ? {
-                    splitType,
-                    splitPosition: point.y,
-                    parent: current,
-                    top: {
-                      id:
-                        height / 2 < point.y
-                          ? current.bottom.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    bottom: {
-                      id:
-                        height / 2 >= point.y
-                          ? current.bottom.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  }
-                : {
-                    splitType,
-                    splitPosition: point.x,
-                    parent: current,
-                    left: {
-                      id:
-                        width / 2 < point.x
-                          ? current.bottom.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    right: {
-                      id:
-                        width / 2 >= point.x
-                          ? current.bottom.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  };
+            const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;
+            const mid_y =
+              dimensions.t + (dimensions.b - current.splitPosition) / 2;
+            if (splitType == SplitType.HORIZONTAL) {
+              current.bottom = {
+                splitType,
+                splitPosition: point.y,
+                parent: current,
+                top: {
+                  parent: null,
+                  id:
+                    mid_y < point.y
+                      ? current.bottom.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                bottom: {
+                  parent: null,
+                  id:
+                    mid_y >= point.y
+                      ? current.bottom.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.bottom.top.parent = current.bottom.bottom.parent =
+                current.bottom;
+            } else {
+              current.bottom = {
+                splitType,
+                splitPosition: point.x,
+                parent: current,
+                left: {
+                  parent: null,
+                  id:
+                    mid_x < point.x
+                      ? current.bottom.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                right: {
+                  parent: null,
+                  id:
+                    mid_x >= point.x
+                      ? current.bottom.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.bottom.left.parent = current.bottom.right.parent =
+                current.bottom;
+            }
             break;
           }
         } else {
@@ -435,58 +505,65 @@ export class UITree {
             current = current.top;
             dimensions.b = current.splitPosition;
           } else {
-            const width = dimensions.r - dimensions.l;
-            const height = current.splitPosition - dimensions.t;
-            current.top =
-              splitType == SplitType.HORIZONTAL
-                ? {
-                    splitType,
-                    splitPosition: point.y,
-                    parent: current,
-                    top: {
-                      id:
-                        height / 2 < point.y
-                          ? current.top.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    bottom: {
-                      id:
-                        height / 2 >= point.y
-                          ? current.top.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  }
-                : {
-                    splitType,
-                    splitPosition: point.x,
-                    parent: current,
-                    left: {
-                      id:
-                        width / 2 < point.x
-                          ? current.top.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                    right: {
-                      id:
-                        width / 2 >= point.x
-                          ? current.top.id
-                          : pane_id != undefined
-                          ? pane_id
-                          : this.id++,
-                    },
-                  };
+            const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;
+            const mid_y =
+              dimensions.t + (current.splitPosition - dimensions.t) / 2;
+            if (splitType == SplitType.HORIZONTAL) {
+              current.top = {
+                splitType,
+                splitPosition: point.y,
+                parent: current,
+                top: {
+                  parent: null,
+                  id:
+                    mid_y < point.y
+                      ? current.top.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                bottom: {
+                  parent: null,
+                  id:
+                    mid_y >= point.y
+                      ? current.top.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.top.top.parent = current.top.bottom.parent = current.top;
+            } else {
+              current.top = {
+                splitType,
+                splitPosition: point.x,
+                parent: current,
+                left: {
+                  parent: null,
+                  id:
+                    mid_x < point.x
+                      ? current.top.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+                right: {
+                  parent: null,
+                  id:
+                    mid_x >= point.x
+                      ? current.top.id
+                      : pane_id != undefined
+                      ? pane_id
+                      : this.idCounter++,
+                },
+              };
+              current.top.left.parent = current.top.right.parent = current.top;
+            }
             break;
           }
         }
       }
     }
-    console.log('After: ', uiTree);
   }
 
   RenderLayout(): UIBlock[] {
@@ -551,7 +628,7 @@ export class UITree {
     const paneHeight = b - t;
     if (isSplitPane(root)) {
       if (root.splitType == SplitType.HORIZONTAL) {
-        return paneHeight / 2 >= target.y
+        return root.splitPosition >= target.y
           ? this.getEnclosingRect(
               root.top,
               { l, r, b: root.splitPosition, t },
@@ -563,7 +640,7 @@ export class UITree {
               target
             );
       }
-      return paneWidth / 2 >= target.x
+      return root.splitPosition >= target.x
         ? this.getEnclosingRect(
             root.left,
             { l, r: root.splitPosition, b, t },
@@ -581,6 +658,7 @@ export class UITree {
       y: t,
       height: paneHeight,
       width: paneWidth,
+      ref: root,
     };
   }
 }
@@ -732,3 +810,14 @@ export function getSplitAnimationState(
   }
   return oldState;
 }
+
+/*
+TODO:
+- Fix drag a box into neighbouring box on the same side (do nothing)
+- Fix drag a box in itself (do nothing)
+- Add Half Splits
+- Add drop regions including drop a box in the center
+- Make it bigger with some content inside
+- refactor
+- Create API
+*/
