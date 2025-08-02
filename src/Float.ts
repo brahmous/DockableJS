@@ -68,6 +68,8 @@ interface PaneDescriptor {
   ref: SolidPane;
 }
 
+type SplitSide = 'left' | 'right' | 'top' | 'bottom';
+
 export class UITree {
   idCounter: number; // Id counter
   root: Pane;
@@ -229,7 +231,13 @@ export class UITree {
     console.log('delete after: ', this);
   }
 
-  Split(splitType: SplitType, point: Point, pane_id?: number, uiTree?: UITree) {
+  Split(
+    splitType: SplitType,
+    point: Point,
+    splitSide: SplitSide,
+    pane_id?: number,
+    uiTree?: UITree
+  ) {
     // console.log(pane_id);
 
     let current: Pane = this.root;
@@ -245,12 +253,13 @@ export class UITree {
       if (splitType == SplitType.HORIZONTAL) {
         this.root = {
           splitType,
-          splitPosition: point.y,
+          splitPosition: this.screenHeight / 2,
           parent: null,
           top: {
             parent: null,
             id:
-              this.screenHeight / 2 < point.y
+              // this.screenHeight / 2 < point.y
+              splitSide == 'top'
                 ? current.id
                 : pane_id != undefined
                 ? pane_id
@@ -259,7 +268,8 @@ export class UITree {
           bottom: {
             parent: null,
             id:
-              this.screenHeight / 2 >= point.y
+              // this.screenHeight / 2 >= point.y
+              splitSide == 'bottom'
                 ? current.id
                 : pane_id != undefined
                 ? pane_id
@@ -270,12 +280,13 @@ export class UITree {
       } else {
         this.root = {
           splitType,
-          splitPosition: point.x,
+          splitPosition: this.screenWidth / 2,
           parent: null,
           left: {
             parent: null,
             id:
-              this.screenWidth / 2 < point.x
+              // this.screenWidth / 2 < point.x
+              splitSide == 'left'
                 ? current.id
                 : pane_id != undefined
                 ? pane_id
@@ -284,7 +295,8 @@ export class UITree {
           right: {
             parent: null,
             id:
-              this.screenWidth / 2 >= point.x
+              // this.screenWidth / 2 >= point.x
+              splitSide == 'right'
                 ? current.id
                 : pane_id != undefined
                 ? pane_id
@@ -304,8 +316,8 @@ export class UITree {
         if (current.splitPosition < point.x) {
           // The right side is split we recurse
           if (isSplitPane(current.right)) {
-            current = current.right;
             dimensions.l = current.splitPosition;
+            current = current.right;
           } else {
             // The right side isn't split so we split it
             const mid_x =
@@ -316,12 +328,13 @@ export class UITree {
             if (splitType == SplitType.HORIZONTAL) {
               current.right = {
                 splitType,
-                splitPosition: point.y,
+                splitPosition: mid_y,
                 parent: current,
                 top: {
                   parent: null,
                   id:
-                    mid_y < point.y /* not the heigh the middle */
+                    // mid_y < point.y /* not the heigh the middle */
+                    splitSide == 'top'
                       ? current.right.id
                       : pane_id != undefined
                       ? pane_id
@@ -330,7 +343,8 @@ export class UITree {
                 bottom: {
                   parent: null,
                   id:
-                    mid_y >= point.y
+                    // mid_y >= point.y
+                    splitSide == 'bottom'
                       ? current.right.id
                       : pane_id != undefined
                       ? pane_id
@@ -342,12 +356,13 @@ export class UITree {
             } else {
               current.right = {
                 splitType,
-                splitPosition: point.x,
+                splitPosition: mid_x,
                 parent: current,
                 left: {
                   parent: null,
                   id:
-                    mid_x < point.x
+                    // mid_x < point.x
+                    splitSide == 'left'
                       ? current.right.id
                       : pane_id != undefined
                       ? pane_id
@@ -356,7 +371,8 @@ export class UITree {
                 right: {
                   parent: null,
                   id:
-                    mid_x >= point.x
+                    // mid_x >= point.x
+                    splitSide == 'right'
                       ? current.right.id
                       : pane_id != undefined
                       ? pane_id
@@ -372,8 +388,8 @@ export class UITree {
           // The split position is to the right of x, so we go left
           if (isSplitPane(current.left)) {
             // The left child is split so we recurse left
-            current = current.left;
             dimensions.r = current.splitPosition;
+            current = current.left;
           } else {
             // The left child is not split, we split it.
             const mid_x =
@@ -382,12 +398,13 @@ export class UITree {
             if (splitType == SplitType.HORIZONTAL) {
               current.left = {
                 splitType,
-                splitPosition: point.y,
+                splitPosition: mid_y,
                 parent: current,
                 top: {
                   parent: null,
                   id:
-                    mid_y < point.y
+                    // mid_y < point.y
+                    splitSide == 'top'
                       ? current.left.id
                       : pane_id != undefined
                       ? pane_id
@@ -396,7 +413,8 @@ export class UITree {
                 bottom: {
                   parent: null,
                   id:
-                    mid_y >= point.y
+                    // mid_y >= point.y
+                    splitSide == 'bottom'
                       ? current.left.id
                       : pane_id != undefined
                       ? pane_id
@@ -408,12 +426,13 @@ export class UITree {
             } else {
               current.left = {
                 splitType,
-                splitPosition: point.x,
+                splitPosition: mid_x,
                 parent: current,
                 left: {
                   parent: null,
                   id:
-                    mid_x < point.x
+                    // mid_x < point.x
+                    splitSide == 'left'
                       ? current.left.id
                       : pane_id != undefined
                       ? pane_id
@@ -422,7 +441,8 @@ export class UITree {
                 right: {
                   parent: null,
                   id:
-                    mid_x >= point.x
+                    // mid_x >= point.x
+                    splitSide == 'right'
                       ? current.left.id
                       : pane_id != undefined
                       ? pane_id
@@ -439,8 +459,8 @@ export class UITree {
         // Horizontal Split
         if (current.splitPosition < point.y) {
           if (isSplitPane(current.bottom)) {
-            current = current.bottom;
             dimensions.t = current.splitPosition;
+            current = current.bottom;
           } else {
             const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;
             const mid_y =
@@ -448,12 +468,13 @@ export class UITree {
             if (splitType == SplitType.HORIZONTAL) {
               current.bottom = {
                 splitType,
-                splitPosition: point.y,
+                splitPosition: mid_y,
                 parent: current,
                 top: {
                   parent: null,
                   id:
-                    mid_y < point.y
+                    // mid_y < point.y
+                    splitSide == 'top'
                       ? current.bottom.id
                       : pane_id != undefined
                       ? pane_id
@@ -462,7 +483,8 @@ export class UITree {
                 bottom: {
                   parent: null,
                   id:
-                    mid_y >= point.y
+                    // mid_y >= point.y
+                    splitSide == 'bottom'
                       ? current.bottom.id
                       : pane_id != undefined
                       ? pane_id
@@ -474,12 +496,13 @@ export class UITree {
             } else {
               current.bottom = {
                 splitType,
-                splitPosition: point.x,
+                splitPosition: mid_x,
                 parent: current,
                 left: {
                   parent: null,
                   id:
-                    mid_x < point.x
+                    // mid_x < point.x
+                    splitSide == 'left'
                       ? current.bottom.id
                       : pane_id != undefined
                       ? pane_id
@@ -488,7 +511,8 @@ export class UITree {
                 right: {
                   parent: null,
                   id:
-                    mid_x >= point.x
+                    // mid_x >= point.x
+                    splitSide == 'right'
                       ? current.bottom.id
                       : pane_id != undefined
                       ? pane_id
@@ -502,21 +526,24 @@ export class UITree {
           }
         } else {
           if (isSplitPane(current.top)) {
-            current = current.top;
             dimensions.b = current.splitPosition;
+            current = current.top;
           } else {
             const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;
             const mid_y =
               dimensions.t + (current.splitPosition - dimensions.t) / 2;
+            console.log('=>', { current });
             if (splitType == SplitType.HORIZONTAL) {
+              //alert(`mid_y = ${mid_y}`);
               current.top = {
                 splitType,
-                splitPosition: point.y,
+                splitPosition: mid_y,
                 parent: current,
                 top: {
                   parent: null,
                   id:
-                    mid_y < point.y
+                    // mid_y < point.y
+                    splitSide == 'top'
                       ? current.top.id
                       : pane_id != undefined
                       ? pane_id
@@ -525,7 +552,8 @@ export class UITree {
                 bottom: {
                   parent: null,
                   id:
-                    mid_y >= point.y
+                    // mid_y >= point.y
+                    splitSide == 'bottom'
                       ? current.top.id
                       : pane_id != undefined
                       ? pane_id
@@ -536,12 +564,13 @@ export class UITree {
             } else {
               current.top = {
                 splitType,
-                splitPosition: point.x,
+                splitPosition: mid_x,
                 parent: current,
                 left: {
                   parent: null,
                   id:
-                    mid_x < point.x
+                    // mid_x < point.x
+                    splitSide == 'left'
                       ? current.top.id
                       : pane_id != undefined
                       ? pane_id
@@ -550,7 +579,8 @@ export class UITree {
                 right: {
                   parent: null,
                   id:
-                    mid_x >= point.x
+                    // mid_x >= point.x
+                    splitSide == 'right'
                       ? current.top.id
                       : pane_id != undefined
                       ? pane_id
@@ -813,8 +843,8 @@ export function getSplitAnimationState(
 
 /*
 TODO:
-- Fix drag a box into neighbouring box on the same side (do nothing)
-- Fix drag a box in itself (do nothing)
+- Fix drag a box into neighbouring box on the same side (do nothing) [✅]
+- Fix drag a box in itself (do nothing)[✅]
 - Add Half Splits
 - Add drop regions including drop a box in the center
 - Make it bigger with some content inside
