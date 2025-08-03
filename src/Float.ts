@@ -363,8 +363,8 @@ export class UITree {
         // The split position is to the left of x, so we must go to the right
         if (current.splitPosition < point.x) {
           // The right side is split we recurse
+          dimensions.l = current.splitPosition;
           if (isSplitPane(current.right)) {
-            dimensions.l = current.splitPosition;
             current = current.right;
           } else {
             // The right side isn't split so we split it
@@ -434,9 +434,9 @@ export class UITree {
           }
         } else {
           // The split position is to the right of x, so we go left
+          dimensions.r = current.splitPosition;
           if (isSplitPane(current.left)) {
             // The left child is split so we recurse left
-            dimensions.r = current.splitPosition;
             current = current.left;
           } else {
             // The left child is not split, we split it.
@@ -506,8 +506,8 @@ export class UITree {
       } else {
         // Horizontal Split
         if (current.splitPosition < point.y) {
+          dimensions.t = current.splitPosition;
           if (isSplitPane(current.bottom)) {
-            dimensions.t = current.splitPosition;
             current = current.bottom;
           } else {
             const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;
@@ -573,8 +573,8 @@ export class UITree {
             break;
           }
         } else {
+          dimensions.b = current.splitPosition;
           if (isSplitPane(current.top)) {
-            dimensions.b = current.splitPosition;
             current = current.top;
           } else {
             const mid_x = dimensions.l + (dimensions.r - dimensions.l) / 2;

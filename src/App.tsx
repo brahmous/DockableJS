@@ -47,9 +47,13 @@ function FloatComponent() {
 
   useEffect(() => {
     // newUiTree = new UITree(ref.current!.clientWidth, ref.current!.clientHeight);
-    // newUiTree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 });
-    // newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 300 });
-    // newUiTree.Split(SplitType.VERTICAL, { x: 275, y: 300 });
+    // newUiTree.Split(SplitType.HORIZONTAL, { x: 200, y: 200 }, 'bottom');
+    // newUiTree.Split(SplitType.VERTICAL, { x: 200, y: 200 }, 'right');
+    // newUiTree.Split(
+    //   SplitType.VERTICAL,
+    //   { x: 275, y: ref.current!.clientHeight / 2 + 10 },
+    //   'right'
+    // );
     const initialBlocks = newUiTree.RenderLayout();
     setBlocks(initialBlocks);
     setState('page');
@@ -109,9 +113,11 @@ function FloatComponent() {
   return (
     <div
       style={{
-        // background: 'green',
         position: 'relative',
-        flexGrow: 1,
+        display: 'inline-block',
+        width: '400px',
+        height: '400px',
+        background: 'green',
       }}
       ref={ref}
       onDragStart={(e) => {
@@ -217,6 +223,7 @@ function FloatComponent() {
                     // transformOrigin: block.anchor.toLowerCase(),
                     // transitionDelay: !block.delete ? '0.1s' : '0s',
                     background: colors[block.id],
+                    // opacity: 0.1,
                   }}
                   key={index}
                   draggable={true}
