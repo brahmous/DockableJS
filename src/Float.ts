@@ -89,6 +89,26 @@ export class UITree {
     // this.screenbbox = domRoot.getBoundingClientRect();
   }
 
+  adjustSplitPosition(
+    root: Pane,
+    splitType: SplitType,
+    newSplitPosition: number
+  ) {
+    if (isSplitPane(root)) {
+      const currentSplitPosition = root.splitPosition;
+      if (root.splitType == splitType) {
+        root.splitPosition = newSplitPosition;
+      }
+      if (root.splitType == SplitType.VERTICAL) {
+        this.adjustSplitPosition(root.left, splitType, currentSplitPosition);
+        this.adjustSplitPosition(root.right, splitType, currentSplitPosition);
+      } else {
+        this.adjustSplitPosition(root.top, splitType, currentSplitPosition);
+        this.adjustSplitPosition(root.bottom, splitType, currentSplitPosition);
+      }
+    }
+  }
+
   Delete(point: Point) {
     console.log('delete before: ', structuredClone(this));
     let current: Pane = this.root;
@@ -99,6 +119,8 @@ export class UITree {
             current = current.right;
           } else {
             const parent = current.parent;
+            const splitPosition = current.splitPosition;
+            const remainingChild = current.left;
             if (parent) {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
@@ -119,6 +141,11 @@ export class UITree {
                   parent.right.parent = parent;
                 }
               }
+              this.adjustSplitPosition(
+                remainingChild,
+                SplitType.VERTICAL,
+                splitPosition
+              );
             } else {
               if (isSplitPane(current.left)) {
                 current.left.parent = null;
@@ -132,6 +159,8 @@ export class UITree {
             current = current.left;
           } else {
             const parent = current.parent;
+            const splitPosition = current.splitPosition;
+            const remainingChild = current.right;
             if (parent) {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
@@ -152,6 +181,11 @@ export class UITree {
                   parent.right.parent = parent;
                 }
               }
+              this.adjustSplitPosition(
+                remainingChild,
+                SplitType.VERTICAL,
+                splitPosition
+              );
             } else {
               if (isSplitPane(current.right)) {
                 current.right.parent = null;
@@ -167,6 +201,8 @@ export class UITree {
             current = current.bottom;
           } else {
             const parent = current.parent;
+            const splitPosition = current.splitPosition;
+            const remainingChild = current.top;
             console.log({ current });
             if (parent) {
               if (parent.splitType == SplitType.HORIZONTAL) {
@@ -186,6 +222,11 @@ export class UITree {
                   parent.right.parent = parent;
                 }
               }
+              this.adjustSplitPosition(
+                remainingChild,
+                SplitType.HORIZONTAL,
+                splitPosition
+              );
             } else {
               if (isSplitPane(current.top)) {
                 current.top.parent = null;
@@ -199,6 +240,8 @@ export class UITree {
             current = current.top;
           } else {
             const parent = current.parent;
+            const splitPosition = current.splitPosition;
+            const remainingChild = current.bottom;
             if (parent) {
               if (parent.splitType == SplitType.HORIZONTAL) {
                 if (parent.top == current) {
@@ -217,6 +260,11 @@ export class UITree {
                   parent.right.parent = parent;
                 }
               }
+              this.adjustSplitPosition(
+                remainingChild,
+                SplitType.HORIZONTAL,
+                splitPosition
+              );
             } else {
               if (isSplitPane(current.bottom)) {
                 current.bottom.parent = null;
